@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Anon-Sphere (Python/Mongo)</title>
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Load Lucide Icons -->
+    <script src="https://cdn.jsdelivr.net/npm/lucide/dist/umd/lucide.min.js"></script>
+    
+    <!-- NEW: QR Code Generator Library -->
+    <script src="https://cdn.rawgit.com/davidshimjs/qrcodejs/gh-pages/qrcode.min.js"></script>
+
+    <!-- Load Inter font -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        /* Custom scrollbar */
+        #messages-container::-webkit-scrollbar { width: 6px; }
+        #messages-container::-webkit-scrollbar-track { background: #1f2937; }
+        #messages-container::-webkit-scrollbar-thumb { background: #4b5563; border-radius: 3px; }
+        #messages-container::-webkit-scrollbar-thumb:hover { background: #6b7280; }
+        .message-card.completed { opacity: 0.5; }
+        .message-card.completed .message-text { text-decoration: line-through; }
+        
+        /* Style for the QR code div */
+        #qrcode-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: white;
+            padding: 16px;
+            border-radius: 8px;
+            margin-top: 1.5rem; /* mt-6 */
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-gray-100 h-full flex items-center justify-center p-4">
+
+    <!-- Main App Container -->
+    <div id="app" class="w-full max-w-4xl h-full max-h-[800px] bg-gray-800 rounded-2xl shadow-2xl flex flex-col overflow-hidden">
+
+        <!-- ===== Home Page ===== -->
+        <div id="home-page" class="flex flex-col items-center justify-center h-full p-8 text-center">
+            <h1 class="text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-500 mb-6">
+                Anon-Sphere
+            </h1>
+            <p class="text-xl text-gray-300 mb-12">Speak your mind. Anonymously.</p>
+
+            <button id="create-room-btn" class="w-full max-w-sm px-6 py-4 mb-8 text-lg font-semibold text-white bg-gradient-to-r from-purple-500 to-pink-500 rounded-lg shadow-lg hover:from-purple-600 hover:to-pink-600 transition-all duration-300 transform hover:scale-105">
+                Create a New Room
+            </button>
+
+            <div class="w-full max-w-sm">
+                <p class="text-gray-400 mb-4">...or join an existing room</p>
+                <div class="flex flex-col sm:flex-row gap-3">
+                    <input type="text" id="room-code-input" placeholder="Enter Room Code"
+                        class="flex-grow px-4 py-3 bg-gray-700 border-2 border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-400 focus:border-transparent text-center uppercase tracking-widest font-mono">
+                    <button id="join-room-btn" class="px-6 py-3 font-semibold bg-gray-600 text-gray-200 rounded-lg hover:bg-gray-500 transition-all duration-200">
+                        Join
+                    </button>
+                </div>
+                <p id="home-error" class="text-red-400 mt-4 h-6"></p>
+            </div>
+        </div>
+
+        <!-- ===== Chat Page ===== -->
+        <div id="chat-page" class="hidden flex-col h-full">
+            <header class="flex-shrink-0 bg-gray-800 border-b border-gray-700 p-4 flex items-center justify-between shadow-md">
+                <button id="leave-room-btn" class="p-2 rounded-md hover:bg-gray-700 transition-colors" title="Leave Room">
+                    <i data-lucide="chevron-left"></i>
+                </button>
+                <div class="text-center">
+                    <span class="text-sm text-gray-400">Room Code</span>
+                    <h2 id="room-code-display" class="text-2xl font-bold tracking-widest font-mono text-purple-300 cursor-pointer" title="Click to copy room code"></h2>
+                </div>
+                <!-- NEW: Invite Button -->
+                <button id="invite-btn" class="p-2 rounded-md hover:bg-gray-700 transition-colors" title="Invite / Share Room">
+                    <i data-lucide="share-2"></i>
+                </button>
+            </header>
+
+            <main id="messages-container" class="flex-1 p-4 sm:p-6 space-y-4 overflow-y-auto"></main>
+
+            <footer class="flex-shrink-0 p-4 bg-gray-800 border-t border-gray-700">
+                <form id="message-form" class="flex gap-3">
+                    <input type="text" id="message-input" placeholder="Type your anonymous message..."
+                        class="flex-grow px-4 py-3 bg-gray-700 border-2 border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-400 focus:border-transparent">
+                    <button type="submit"
+                        class="px-5 py-3 font-semibold text-white bg-gradient-to-r from-purple-500 to-pink-500 rounded-lg shadow-lg hover:from-purple-600 hover:to-pink-600 transition-all duration-300">
+                        <i data-lucide="send-horizontal"></i>
+                    </button>
+                </form>
+            </footer>
+        </div>
+    </div>
+
+    <!-- ===== Message Enlarge Modal ===== -->
+    <div id="message-modal" class="hidden fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center p-4 z-50">
+        <div class="bg-gray-800 rounded-2xl shadow-2xl p-8 max-w-3xl w-full relative">
+            <button id="modal-close-btn" class="absolute top-4 right-4 p-2 rounded-full text-gray-400 hover:bg-gray-700 hover:text-white transition-colors">
+                <i data-lucide="x"></i>
+            </button>
+            <p id="modal-message-text" class="text-3xl text-gray-100 leading-relaxed break-words max-h-[70vh] overflow-y-auto"></p>
+        </div>
+    </div>
+
+    <!-- ===== NEW: Invite Modal ===== -->
+    <div id="invite-modal" class="hidden fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center p-4 z-50">
+        <div class="bg-gray-800 rounded-2xl shadow-2xl p-6 sm:p-8 max-w-md w-full relative text-center">
+            <button id="invite-modal-close-btn" class="absolute top-4 right-4 p-2 rounded-full text-gray-400 hover:bg-gray-700 hover:text-white transition-colors">
+                <i data-lucide="x"></i>
+            </button>
+            <h3 class="text-2xl font-bold text-white mb-6">Invite Others to Join</h3>
+            <p class="text-gray-300 mb-4">Share this link or QR code with participants.</p>
+            
+            <!-- QR Code -->
+            <div id="qrcode-container">
+                <div id="qrcode"></div> <!-- QR code will be generated here -->
+            </div>
+
+            <!-- Join Link -->
+            <div class="mt-6">
+                <label for="join-link-input" class="block text-sm font-medium text-gray-400 text-left mb-2">Join Link</label>
+                <div class="flex gap-2">
+                    <input type="text" id="join-link-input" readonly
+                        class="flex-grow px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-gray-100 focus:outline-none">
+                    <button id="copy-link-btn" class="px-4 py-2 font-semibold bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors">
+                        Copy
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+
+            // --- Config ---
+            const API_BASE_URL = window.location.origin.includes('localhost') || window.location.origin.includes('127.0.0.1') 
+                ? 'http://localhost:8000' 
+                : window.location.origin;
+
+            // --- App State ---
+            let currentRoomId = null;
+            let isHost = false;
+            let messagePoller = null; 
+            let currentMessages = []; 
+            let qrCodeInstance = null; // To hold the QR code object
+
+            // --- DOM Elements ---
+            const homePage = document.getElementById('home-page');
+            const chatPage = document.getElementById('chat-page');
+            const createRoomBtn = document.getElementById('create-room-btn');
+            const joinRoomBtn = document.getElementById('join-room-btn');
+            const leaveRoomBtn = document.getElementById('leave-room-btn');
+            const roomCodeInput = document.getElementById('room-code-input');
+            const homeError = document.getElementById('home-error');
+            const roomCodeDisplay = document.getElementById('room-code-display');
+            const messagesContainer = document.getElementById('messages-container');
+            const messageForm = document.getElementById('message-form');
+            const messageInput = document.getElementById('message-input');
+            
+            // Message Modal
+            const messageModal = document.getElementById('message-modal');
+            const modalMessageText = document.getElementById('modal-message-text');
+            const modalCloseBtn = document.getElementById('modal-close-btn');
+
+            // Invite Modal
+            const inviteBtn = document.getElementById('invite-btn');
+            const inviteModal = document.getElementById('invite-modal');
+            const inviteModalCloseBtn = document.getElementById('invite-modal-close-btn');
+            const qrcodeContainer = document.getElementById('qrcode');
+            const joinLinkInput = document.getElementById('join-link-input');
+            const copyLinkBtn = document.getElementById('copy-link-btn');
+
+
+            // --- Helper Functions ---
+
+            function getUserId() {
+                let uid = localStorage.getItem('anonUserId');
+                if (!uid) {
+                    uid = 'user-' + Math.random().toString(36).substring(2, 15);
+                    localStorage.setItem('anonUserId', uid);
+                }
+                return uid;
+            }
+
+            // NEW: Checks URL parameters for a room code
+            function checkURLForRoomCode() {
+                try {
+                    const urlParams = new URLSearchParams(window.location.search);
+                    const roomFromURL = urlParams.get('room');
+                    if (roomFromURL) {
+                        roomCodeInput.value = roomFromURL.toUpperCase();
+                        homeError.textContent = "Room code from link loaded.";
+                    }
+                } catch (e) {
+                    console.warn("Could not parse URL parameters:", e);
+                }
+            }
+
+            function showPage(pageName) {
+                homePage.classList.toggle('hidden', pageName !== 'home');
+                homePage.classList.toggle('flex', pageName === 'home');
+                chatPage.classList.toggle('hidden', pageName !== 'chat');
+                chatPage.classList.toggle('flex', pageName === 'chat');
+
+                if (pageName === 'home') {
+                    if (messagePoller) {
+                        clearInterval(messagePoller);
+                        messagePoller = null;
+                    }
+                    currentRoomId = null;
+                    isHost = false;
+                    messagesContainer.innerHTML = '';
+                    // Don't clear roomCodeInput if we just came from a link
+                    // roomCodeInput.value = ''; 
+                    homeError.textContent = '';
+                } else {
+                    startMessagePolling();
+                }
+            }
+
+            function showHomeError(message) {
+                homeError.textContent = message;
+                setTimeout(() => {
+                    if (homeError.textContent === message) {
+                        homeError.textContent = '';
+                    }
+                }, 3000);
+            }
+
+            function renderMessages(messages) {
+                if (JSON.stringify(messages) === JSON.stringify(currentMessages)) {
+                    return; 
+                }
+                currentMessages = messages;
+
+                const shouldScroll = messagesContainer.scrollTop + messagesContainer.clientHeight >= messagesContainer.scrollHeight - 50;
+                
+                messagesContainer.innerHTML = ''; 
+                
+                messages.forEach(msg => {
+                    const card = document.createElement('div');
+                    card.className = `message-card bg-gray-700 p-4 rounded-xl shadow-md flex justify-between items-start ${msg.isCompleted ? 'completed' : ''}`;
+                    card.dataset.id = msg._id; 
+
+                    const text = document.createElement('p');
+                    text.className = 'message-text text-lg text-gray-100 break-words w-full mr-4';
+                    text.textContent = msg.text;
+                    card.appendChild(text);
+
+                    if (isHost) {
+                        const controls = document.createElement('div');
+                        controls.className = 'flex-shrink-0 flex items-center space-x-1 sm:space-x-2 text-gray-400';
+                        
+                        controls.innerHTML = `
+                            <button class="p-2 rounded-full hover:bg-gray-600 ${msg.isCompleted ? 'text-green-400' : 'hover:text-green-400'}" title="Toggle Complete" onclick="window.handleToggleComplete('${msg._id}', ${msg.isCompleted})">
+                                <i data-lucide="${msg.isCompleted ? 'check-circle-2' : 'circle'}" class="w-5 h-5"></i>
+                            </button>
+                            <button class="p-2 rounded-full hover:bg-gray-600 hover:text-blue-400" title="Enlarge" onclick="window.handleEnlargeMessage(this)">
+                                <i data-lucide="expand" class="w-5 h-5"></i>
+                            </button>
+                            <button class="p-2 rounded-full hover:bg-gray-600 hover:text-red-400" title="Delete" onclick="window.handleDeleteMessage('${msg._id}')">
+                                <i data-lucide="trash-2" class="w-5 h-5"></i>
+                            </button>
+                        `;
+                        card.appendChild(controls);
+                    }
+                    messagesContainer.appendChild(card);
+                });
+
+                lucide.createIcons(); 
+
+                if (shouldScroll) {
+                    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+                }
+            }
+
+            // --- API Call Functions ---
+
+            async function handleCreateRoom() {
+                try {
+                    const response = await fetch(`${API_BASE_URL}/api/create_room`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ hostId: getUserId() })
+                    });
+                    if (!response.ok) throw new Error('Could not create room.');
+                    
+                    const room = await response.json();
+                    currentRoomId = room.room_code;
+                    isHost = true;
+                    roomCodeDisplay.textContent = currentRoomId;
+                    showPage('chat');
+                } catch (error) {
+                    console.error("Error creating room:", error);
+                    showHomeError(error.message);
+                }
+            }
+
+            async function handleJoinRoom() {
+                const roomId = roomCodeInput.value.trim().toUpperCase();
+                if (!roomId) {
+                    showHomeError("Please enter a room code.");
+                    return;
+                }
+                try {
+                    const response = await fetch(`${API_BASE_URL}/api/join_room?room_code=${roomId}`);
+                    if (!response.ok) throw new Error('Room not found.');
+
+                    const room = await response.json();
+                    currentRoomId = room.room_code;
+                    isHost = (room.hostId === getUserId()); 
+                    roomCodeDisplay.textContent = currentRoomId;
+                    showPage('chat');
+                    
+                    // NEW: Clear the URL parameter after joining
+                    if (window.history.pushState) {
+                        const cleanURL = window.location.origin + window.location.pathname;
+                        window.history.pushState({path: cleanURL}, '', cleanURL);
+                    }
+
+                } catch (error) {
+                    console.error("Error joining room:", error);
+                    showHomeError(error.message);
+                }
+            }
+
+            async function handleSendMessage(e) {
+                e.preventDefault();
+                const text = messageInput.value.trim();
+                if (text && currentRoomId) {
+                    try {
+                        await fetch(`${API_BASE_URL}/api/send_message`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ room_code: currentRoomId, text: text })
+                        });
+                        messageInput.value = '';
+                        await fetchMessages(); 
+                    } catch (error) {
+                        console.error("Error sending message:", error);
+                    }
+                }
+            }
+            
+            async function fetchMessages() {
+                if (!currentRoomId) return;
+                try {
+                    const response = await fetch(`${API_BASE_URL}/api/get_messages?room_code=${currentRoomId}`);
+                    if (!response.ok) throw new Error('Failed to fetch messages.');
+                    const messages = await response.json();
+                    renderMessages(messages);
+                } catch (error) {
+                    console.error(error);
+                }
+            }
+
+            function startMessagePolling() {
+                if (messagePoller) clearInterval(messagePoller); 
+                fetchMessages(); 
+                messagePoller = setInterval(fetchMessages, 2000); 
+            }
+
+            // --- Host Control Functions (Exposed to window) ---
+
+            window.handleToggleComplete = async (messageId, currentStatus) => {
+                if (!isHost) return;
+                try {
+                    await fetch(`${API_BASE_URL}/api/toggle_message`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ message_id: messageId, is_completed: !currentStatus })
+                    });
+                    await fetchMessages(); 
+                } catch (error)
+ {
+                    console.error("Error toggling message:", error);
+                }
+            }
+
+            window.handleDeleteMessage = async (messageId) => {
+                if (!isHost) return;
+                try {
+                    await fetch(`${API_BASE_URL}/api/delete_message`, {
+                        method: 'DELETE',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ message_id: messageId })
+                    });
+                    await fetchMessages(); 
+                } catch (error) {
+                    console.error("Error deleting message:", error);
+                }
+            }
+
+            window.handleEnlargeMessage = (buttonEl) => {
+                const text = buttonEl.closest('.message-card').querySelector('.message-text').textContent;
+                modalMessageText.textContent = text;
+                messageModal.classList.remove('hidden');
+            }
+
+            function closeMessageModal() {
+                messageModal.classList.add('hidden');
+            }
+            
+            function copyRoomCodeToClipboard() {
+                const code = roomCodeDisplay.textContent;
+                if (!code) return;
+                navigator.clipboard.writeText(code).then(() => {
+                    const originalText = roomCodeDisplay.textContent;
+                    roomCodeDisplay.textContent = "Copied!";
+                    setTimeout(() => roomCodeDisplay.textContent = originalText, 1500);
+                }, (err) => {
+                    console.error('Failed to copy room code: ', err);
+                });
+            }
+
+            // --- NEW: Invite Modal Functions ---
+            
+            function showInviteModal() {
+                const roomCode = currentRoomId;
+                if (!roomCode) return;
+
+                // Use pathname to get a clean URL without parameters
+                const baseURL = window.location.origin + window.location.pathname;
+                const joinLink = `${baseURL}?room=${roomCode}`;
+                
+                joinLinkInput.value = joinLink;
+
+                // Clear old QR code
+                qrcodeContainer.innerHTML = '';
+                
+                // Generate new QR code
+                try {
+                    qrCodeInstance = new QRCode(qrcodeContainer, {
+                        text: joinLink,
+                        width: 200,
+                        height: 200,
+                        colorDark : "#e5e7eb", // gray-200
+                        colorLight : "#ffffff", // white
+                        correctLevel : QRCode.CorrectLevel.H
+                    });
+                } catch (e) {
+                    console.error("Error generating QR code:", e);
+                    qrcodeContainer.textContent = "Could not generate QR code.";
+                }
+
+                inviteModal.classList.remove('hidden');
+            }
+
+            function closeInviteModal() {
+                inviteModal.classList.add('hidden');
+            }
+
+            function copyJoinLink() {
+                joinLinkInput.select();
+                document.execCommand('copy'); // Use execCommand for broader compatibility
+                
+                copyLinkBtn.textContent = "Copied!";
+                setTimeout(() => {
+                    copyLinkBtn.textContent = "Copy";
+                }, 2000);
+            }
+
+            // --- Init ---
+            createRoomBtn.onclick = handleCreateRoom;
+            joinRoomBtn.onclick = handleJoinRoom;
+            leaveRoomBtn.onclick = () => showPage('home');
+            messageForm.onsubmit = handleSendMessage;
+            
+            // Message modal
+            modalCloseBtn.onclick = closeMessageModal;
+            messageModal.onclick = (e) => {
+                if (e.target === messageModal) closeMessageModal();
+            };
+            
+            // Invite modal
+            inviteBtn.onclick = showInviteModal;
+            inviteModalCloseBtn.onclick = closeInviteModal;
+            inviteModal.onclick = (e) => {
+                if (e.target === inviteModal) closeInviteModal();
+            };
+            copyLinkBtn.onclick = copyJoinLink;
+
+            // Room code clipboard
+            roomCodeDisplay.onclick = copyRoomCodeToClipboard;
+            
+            roomCodeInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') handleJoinRoom();
+            });
+
+            lucide.createIcons();
+            checkURLForRoomCode(); // NEW: Check for URL param on load
+            showPage('home'); 
+            getUserId(); 
+        });
+    </script>
+</body>
+</html>
+
