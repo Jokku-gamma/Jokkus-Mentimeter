@@ -4,12 +4,15 @@ import string
 import datetime
 from fastapi import FastAPI, HTTPException, Body
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 from pymongo import MongoClient
 from pymongo.collection import Collection
 from pydantic import BaseModel, Field
 from typing import List, Optional
 from bson import ObjectId
 from dotenv import load_dotenv
+import pathlib
 
 # Load .env file for local development
 # Vercel will use environment variables set in the dashboard
@@ -64,6 +67,13 @@ class DeleteMessageRequest(BaseModel):
 # Vercel looks for an 'app' variable
 app = FastAPI()
 
+# Get the directory containing index.py
+current_dir = pathlib.Path(__file__).parent.parent
+static_dir = current_dir
+
+# Mount the static files directory
+app.mount("/static", StaticFiles(directory=str(static_dir)), name="static")
+
 # --- CORS Middleware ---
 # This allows your frontend (on a different domain) to talk to this API
 app.add_middleware(
@@ -80,6 +90,11 @@ def generate_room_code():
     return ''.join(random.choice(chars) for _ in range(6))
 
 # --- API Endpoints ---
+
+# Serve the main HTML file at the root
+@app.get("/")
+async def read_index():
+    return FileResponse(str(static_dir / "index.html"))
 
 # Vercel requires this root endpoint for health checks
 @app.get("/api")

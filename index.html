@@ -12,6 +12,9 @@
     <!-- NEW: QR Code Generator Library -->
     <script src="https://cdn.rawgit.com/davidshimjs/qrcodejs/gh-pages/qrcode.min.js"></script>
 
+    <!-- Animate.css for animations -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
+
     <!-- Load Inter font -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -25,10 +28,131 @@
         #messages-container::-webkit-scrollbar-track { background: #1f2937; }
         #messages-container::-webkit-scrollbar-thumb { background: #4b5563; border-radius: 3px; }
         #messages-container::-webkit-scrollbar-thumb:hover { background: #6b7280; }
-        .message-card.completed { opacity: 0.5; }
-        .message-card.completed .message-text { text-decoration: line-through; }
+
+        /* Host Badge and Controls */
+        .host-badge {
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            padding: 0.25rem 0.75rem;
+            border-radius: 1rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: white;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            animation: pulse 2s infinite;
+            box-shadow: 0 0 15px rgba(139, 92, 246, 0.3);
+        }
+
+        .host-controls {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            background: rgba(17, 24, 39, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+            padding: 1rem;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            z-index: 40;
+            transform: translateY(0);
+            transition: all 0.3s ease;
+        }
+
+        .host-controls:hover {
+            transform: translateY(-5px);
+        }
+
+        .host-controls.minimized {
+            transform: translateY(calc(100% - 40px));
+        }
+
+        .host-control-btn {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            padding: 0.5rem;
+            margin: 0.25rem;
+            transition: all 0.2s ease;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .host-control-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateY(-2px);
+        }
+
+        @keyframes pulse {
+            0% { box-shadow: 0 0 15px rgba(139, 92, 246, 0.3); }
+            50% { box-shadow: 0 0 25px rgba(139, 92, 246, 0.5); }
+            100% { box-shadow: 0 0 15px rgba(139, 92, 246, 0.3); }
+        }
+
+        /* Enhanced Message Cards */
+        .message-card {
+            transform-origin: center;
+            transition: all 0.3s ease;
+            animation: fadeInUp 0.5s ease;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
         
-        /* Style for the QR code div */
+        .message-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .message-card.completed {
+            opacity: 0.5;
+            transform: scale(0.98);
+        }
+
+        .message-card.completed .message-text {
+            text-decoration: line-through;
+        }
+
+        .message-card.deleting {
+            animation: fadeOutRight 0.5s ease forwards;
+        }
+
+        /* Buttons and Interactive Elements */
+        button {
+            transition: all 0.2s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        button:active {
+            transform: scale(0.95);
+        }
+
+        button::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle, rgba(255,255,255,0.3) 0%, transparent 60%);
+            transform: translate(-50%, -50%) scale(0);
+            opacity: 0;
+            transition: 0.4s ease;
+        }
+
+        button:active::after {
+            transform: translate(-50%, -50%) scale(2);
+            opacity: 1;
+        }
+
+        /* Input Fields Enhancement */
+        input[type="text"] {
+            transition: all 0.3s ease;
+        }
+
+        input[type="text"]:focus {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 20px rgba(139, 92, 246, 0.3);
+        }
+
+        /* QR Code Container */
         #qrcode-container {
             display: flex;
             justify-content: center;
@@ -36,7 +160,72 @@
             background: white;
             padding: 16px;
             border-radius: 8px;
-            margin-top: 1.5rem; /* mt-6 */
+            margin-top: 1.5rem;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.2);
+            transform: translateY(0);
+            transition: all 0.3s ease;
+        }
+
+        #qrcode-container:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3);
+        }
+
+        /* Mobile Optimizations */
+        @media (max-width: 640px) {
+            .message-card {
+                margin-bottom: 0.75rem;
+            }
+
+            #app {
+                margin: 0;
+                height: 100vh !important;
+                max-height: none !important;
+                border-radius: 0 !important;
+            }
+
+            #messages-container {
+                padding: 1rem;
+            }
+
+            .modal-content {
+                margin: 0.5rem;
+                max-height: 90vh;
+            }
+        }
+
+        /* Page Transitions */
+        #home-page, #chat-page {
+            transition: opacity 0.3s ease, transform 0.3s ease;
+        }
+
+        .page-enter {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+
+        .page-enter-active {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* Custom Animations */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeOutRight {
+            to {
+                opacity: 0;
+                transform: translateX(100%);
+            }
         }
     </style>
 </head>
@@ -52,12 +241,14 @@
             </h1>
             <p class="text-xl text-gray-300 mb-12">Speak your mind. Anonymously.</p>
 
-            <button id="create-room-btn" class="w-full max-w-sm px-6 py-4 mb-8 text-lg font-semibold text-white bg-gradient-to-r from-purple-500 to-pink-500 rounded-lg shadow-lg hover:from-purple-600 hover:to-pink-600 transition-all duration-300 transform hover:scale-105">
-                Create a New Room
+            <button id="create-room-btn" class="relative w-full max-w-sm px-6 py-4 mb-8 text-lg font-semibold text-white bg-gradient-to-r from-purple-500 to-pink-500 rounded-lg shadow-lg hover:from-purple-600 hover:to-pink-600 transition-all duration-300 transform hover:scale-105 overflow-hidden group">
+                <span class="relative z-10">Create a New Room</span>
+                <div class="absolute inset-0 bg-gradient-to-r from-purple-600 to-pink-600 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                <div class="absolute inset-0 bg-gradient-to-r from-purple-400/20 to-pink-400/20 animate-pulse"></div>
             </button>
 
             <div class="w-full max-w-sm">
-                <p class="text-gray-400 mb-4">...or join an existing room</p>
+                <p class="text-gray-400 mb-4 animate__animated animate__fadeIn animate__delay-1s">...or join an existing room</p>
                 <div class="flex flex-col sm:flex-row gap-3">
                     <input type="text" id="room-code-input" placeholder="Enter Room Code"
                         class="flex-grow px-4 py-3 bg-gray-700 border-2 border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-400 focus:border-transparent text-center uppercase tracking-widest font-mono">
@@ -86,6 +277,35 @@
             </header>
 
             <main id="messages-container" class="flex-1 p-4 sm:p-6 space-y-4 overflow-y-auto"></main>
+
+            <!-- Host Controls Panel -->
+            <div id="host-controls" class="host-controls hidden">
+                <div class="flex items-center justify-between mb-3">
+                    <div class="flex items-center">
+                        <span class="host-badge mr-2">Host Mode</span>
+                        <i data-lucide="crown" class="w-4 h-4 text-yellow-400"></i>
+                    </div>
+                    <button id="minimize-host-controls" class="text-gray-400 hover:text-white transition-colors">
+                        <i data-lucide="chevron-down"></i>
+                    </button>
+                </div>
+                <div class="space-y-2">
+                    <div class="flex items-center justify-between text-sm text-gray-300">
+                        <span>Messages: <span id="message-count">0</span></span>
+                        <button id="clear-all-btn" class="host-control-btn text-red-400 hover:text-red-300">
+                            <i data-lucide="trash-2" class="w-4 h-4"></i> Clear All
+                        </button>
+                    </div>
+                    <div class="flex justify-between gap-2">
+                        <button id="sort-time-btn" class="host-control-btn flex-1">
+                            <i data-lucide="clock" class="w-4 h-4 mr-1"></i> Sort by Time
+                        </button>
+                        <button id="sort-completed-btn" class="host-control-btn flex-1">
+                            <i data-lucide="check-circle" class="w-4 h-4 mr-1"></i> Sort by Status
+                        </button>
+                    </div>
+                </div>
+            </div>
 
             <footer class="flex-shrink-0 p-4 bg-gray-800 border-t border-gray-700">
                 <form id="message-form" class="flex gap-3">
@@ -247,10 +467,14 @@
                 
                 messagesContainer.innerHTML = ''; 
                 
-                messages.forEach(msg => {
+                messages.forEach((msg, index) => {
                     const card = document.createElement('div');
-                    card.className = `message-card bg-gray-700 p-4 rounded-xl shadow-md flex justify-between items-start ${msg.isCompleted ? 'completed' : ''}`;
-                    card.dataset.id = msg._id; 
+                    card.className = `message-card bg-gray-700/90 p-4 rounded-xl shadow-md flex justify-between items-start ${msg.isCompleted ? 'completed' : ''}`;
+                    card.dataset.id = msg._id;
+                    
+                    // Add staggered animation delay
+                    card.style.animationDelay = `${index * 0.1}s`;
+                    card.classList.add('animate__animated', 'animate__fadeInUp');
 
                     const text = document.createElement('p');
                     text.className = 'message-text text-lg text-gray-100 break-words w-full mr-4';
