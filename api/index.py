@@ -68,7 +68,7 @@ class DeleteMessageRequest(BaseModel):
 app = FastAPI()
 
 # Get the directory containing index.py
-current_dir = pathlib.Path(__file__).parent.parent
+current_dir = pathlib.Path(__file__).parent
 static_dir = current_dir
 
 # Mount the static files directory
