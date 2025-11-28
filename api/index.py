@@ -65,7 +65,6 @@ def generate_room_code():
     return ''.join(random.choice(chars) for _ in range(6))
 
 # Health check at root (Vercel will mount the function and forward requests here)
-@app.get("/")
 @app.get("/api")
 def root_health():
     return {"status": "ok", "message": "Anon-Sphere API (root)"}
