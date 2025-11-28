@@ -1,0 +1,667 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Voicebox - Anonymous Feedback Platform</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Poppins:wght@600;700;800&display=swap" rel="stylesheet">
+    <style>
+        * { -webkit-tap-highlight-color: transparent; }
+        html, body { font-family: 'Inter', sans-serif; scroll-behavior: smooth; }
+        input, textarea { font-size: 16px !important; font-family: 'Inter', sans-serif; }
+        
+        /* Gradient Backgrounds */
+        .bg-gradient-soft { background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%); }
+        .bg-gradient-warm { background: linear-gradient(135deg, #fff5e1 0%, #ffe0b2 100%); }
+        .bg-gradient-cool { background: linear-gradient(135deg, #e0f2f1 0%, #b2dfdb 100%); }
+        .bg-gradient-rose { background: linear-gradient(135deg, #ffe0ec 0%, #f8bbd0 100%); }
+
+        /* Glass effect */
+        .glass {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+        }
+
+        .glass-dark {
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        /* Animations */
+        @keyframes float { 0%, 100% { transform: translateY(0px); } 50% { transform: translateY(-20px); } }
+        @keyframes slideInDown { from { opacity: 0; transform: translateY(-30px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes slideInUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes pulse-glow { 0%, 100% { box-shadow: 0 0 20px rgba(59, 130, 246, 0.3); } 50% { box-shadow: 0 0 30px rgba(59, 130, 246, 0.6); } }
+        @keyframes shimmer { 0% { background-position: -1000px 0; } 100% { background-position: 1000px 0; } }
+        @keyframes bubble { 0% { transform: translateY(0) scale(1); opacity: 1; } 100% { transform: translateY(-20px) scale(0.95); opacity: 0; } }
+
+        .animate-float { animation: float 3s ease-in-out infinite; }
+        .animate-float-delay { animation: float 3s ease-in-out 1s infinite; }
+        .animate-float-delay-2 { animation: float 3s ease-in-out 2s infinite; }
+        .msg-enter { animation: slideInUp 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
+        .btn-click { animation: pulse-glow 0.6s ease-out; }
+
+        /* Scrollbar */
+        .scrollbar-hide::-webkit-scrollbar { display: none; }
+        .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+
+        /* Buttons */
+        .btn-primary {
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            background: linear-gradient(135deg, #3b82f6, #2563eb);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            padding: 12px 32px;
+            font-weight: 600;
+            font-size: 16px;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(59, 130, 246, 0.5);
+        }
+
+        .btn-primary:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 10px rgba(59, 130, 246, 0.3);
+        }
+
+        .btn-secondary {
+            background: white;
+            color: #3b82f6;
+            border: 2px solid #3b82f6;
+            transition: all 0.3s ease;
+        }
+
+        .btn-secondary:hover {
+            background: #f0f9ff;
+            transform: translateY(-2px);
+        }
+
+        /* Input Fields */
+        .input-modern {
+            border-radius: 12px;
+            border: 2px solid #e5e7eb;
+            padding: 12px 16px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            background: white;
+            color: #1f2937;
+        }
+
+        .input-modern:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+            transform: translateY(-1px);
+        }
+
+        .input-modern::placeholder {
+            color: #9ca3af;
+        }
+
+        /* Message Bubbles */
+        .msg-bubble {
+            animation: slideInUp 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+            transition: all 0.3s ease;
+        }
+
+        .msg-bubble:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Icons */
+        .icon-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: white;
+            color: #3b82f6;
+            border: none;
+        }
+
+        .icon-btn:hover {
+            background: #f0f9ff;
+            transform: scale(1.1) rotate(5deg);
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);
+        }
+
+        /* Badge */
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: linear-gradient(135deg, #fbbf24, #f59e0b);
+            color: white;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            box-shadow: 0 2px 8px rgba(245, 158, 11, 0.3);
+        }
+
+        /* Custom scrollbar */
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: rgba(59, 130, 246, 0.3);
+            border-radius: 3px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: rgba(59, 130, 246, 0.5);
+        }
+    </style>
+</head>
+<body class="bg-gradient-soft text-gray-900 h-dvh flex flex-col overflow-hidden antialiased">
+
+    <!-- Home Page -->
+    <div id="home-page" class="flex-1 flex flex-col overflow-y-auto scrollbar-hide">
+        <!-- Hero Section -->
+        <section class="min-h-screen bg-gradient-soft flex flex-col items-center justify-center px-4 py-12 relative overflow-hidden">
+            <!-- Floating shapes -->
+            <div class="absolute top-20 left-10 w-32 h-32 bg-blue-200 rounded-full opacity-20 animate-float"></div>
+            <div class="absolute bottom-32 right-10 w-40 h-40 bg-blue-100 rounded-full opacity-20 animate-float-delay"></div>
+            <div class="absolute top-1/3 right-1/4 w-24 h-24 bg-indigo-100 rounded-full opacity-20 animate-float-delay-2"></div>
+
+            <div class="z-10 max-w-2xl text-center animate__animated animate__fadeIn">
+                <div class="mb-8">
+                    <div class="inline-block mb-4">
+                        <span class="badge">✨ Anonymous Feedback Platform</span>
+                    </div>
+                    <h1 class="text-6xl md:text-7xl font-extrabold text-gray-900 mb-4" style="font-family: 'Poppins', sans-serif;">
+                        Voicebox
+                    </h1>
+                    <p class="text-xl md:text-2xl text-gray-600 font-light mb-2">
+                        Speak freely. Share thoughts anonymously.
+                    </p>
+                    <p class="text-lg text-gray-500">
+                        Real-time feedback without boundaries.
+                    </p>
+                </div>
+
+                <!-- Main CTA Section -->
+                <div class="glass rounded-3xl p-8 md:p-12 shadow-xl mb-12 animate__animated animate__slideInUp">
+                    <div class="space-y-6">
+                        <!-- Create Room Button -->
+                        <button onclick="createRoom()" class="btn-primary w-full py-4 text-lg font-bold rounded-full shadow-lg hover:shadow-xl">
+                            <span class="flex items-center justify-center gap-2">
+                                <i data-lucide="sparkles" class="w-5 h-5"></i>
+                                Create New Room
+                            </span>
+                        </button>
+
+                        <!-- Divider -->
+                        <div class="flex items-center gap-3">
+                            <div class="flex-1 h-px bg-gray-300"></div>
+                            <span class="text-gray-500 text-sm font-medium">OR</span>
+                            <div class="flex-1 h-px bg-gray-300"></div>
+                        </div>
+
+                        <!-- Join Section -->
+                        <div class="space-y-3">
+                            <label class="block text-sm font-semibold text-gray-700">Join Existing Room</label>
+                            <div class="flex gap-2">
+                                <input type="text" id="room-code-input" placeholder="Enter room code" maxlength="6" 
+                                    class="input-modern flex-1 text-center text-xl font-mono tracking-widest uppercase">
+                                <button onclick="joinRoom()" class="btn-primary px-6 rounded-full">
+                                    <i data-lucide="arrow-right" class="w-5 h-5"></i>
+                                </button>
+                            </div>
+                            <p id="error-msg" class="text-red-500 text-sm h-5 font-medium"></p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Features Preview -->
+                <div class="grid md:grid-cols-3 gap-4 mb-12">
+                    <div class="glass p-6 rounded-2xl text-center animate__animated animate__slideInUp" style="animation-delay: 0.1s;">
+                        <div class="inline-flex items-center justify-center w-12 h-12 bg-blue-100 rounded-full mb-3">
+                            <i data-lucide="shield-check" class="w-6 h-6 text-blue-600"></i>
+                        </div>
+                        <h3 class="font-semibold text-gray-900 mb-1">100% Anonymous</h3>
+                        <p class="text-sm text-gray-600">Your identity stays private</p>
+                    </div>
+                    <div class="glass p-6 rounded-2xl text-center animate__animated animate__slideInUp" style="animation-delay: 0.2s;">
+                        <div class="inline-flex items-center justify-center w-12 h-12 bg-indigo-100 rounded-full mb-3">
+                            <i data-lucide="zap" class="w-6 h-6 text-indigo-600"></i>
+                        </div>
+                        <h3 class="font-semibold text-gray-900 mb-1">Real-Time</h3>
+                        <p class="text-sm text-gray-600">Instant message delivery</p>
+                    </div>
+                    <div class="glass p-6 rounded-2xl text-center animate__animated animate__slideInUp" style="animation-delay: 0.3s;">
+                        <div class="inline-flex items-center justify-center w-12 h-12 bg-blue-200 rounded-full mb-3">
+                            <i data-lucide="lock" class="w-6 h-6 text-blue-700"></i>
+                        </div>
+                        <h3 class="font-semibold text-gray-900 mb-1">Secure</h3>
+                        <p class="text-sm text-gray-600">Your data is protected</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Footer Section -->
+        <footer class="bg-white border-t border-gray-200 px-4 py-8 md:py-12">
+            <div class="max-w-4xl mx-auto">
+                <div class="grid md:grid-cols-3 gap-8 mb-8">
+                    <!-- About -->
+                    <div>
+                        <h4 class="font-bold text-gray-900 mb-3">About Voicebox</h4>
+                        <p class="text-sm text-gray-600 leading-relaxed">
+                            Voicebox is an anonymous feedback platform that lets you share thoughts and ideas without revealing your identity. Perfect for meetings, events, and gatherings.
+                        </p>
+                    </div>
+                    <!-- Features -->
+                    <div>
+                        <h4 class="font-bold text-gray-900 mb-3">Features</h4>
+                        <ul class="text-sm text-gray-600 space-y-2">
+                            <li>✓ Anonymous messaging</li>
+                            <li>✓ Real-time updates</li>
+                            <li>✓ Host controls</li>
+                            <li>✓ QR code sharing</li>
+                        </ul>
+                    </div>
+                    <!-- Links -->
+                    <div>
+                        <h4 class="font-bold text-gray-900 mb-3">Quick Links</h4>
+                        <ul class="text-sm text-gray-600 space-y-2">
+                            <li><a href="#" class="hover:text-blue-600 transition">Privacy Policy</a></li>
+                            <li><a href="#" class="hover:text-blue-600 transition">Terms of Service</a></li>
+                            <li><a href="#" class="hover:text-blue-600 transition">Contact Us</a></li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="border-t border-gray-200 pt-8 text-center">
+                    <p class="text-sm text-gray-600 mb-2">
+                        Made with <span class="text-red-500">❤️</span> by Voicebox Team
+                    </p>
+                    <p class="text-xs text-gray-500">© 2025 Voicebox. All rights reserved.</p>
+                </div>
+            </div>
+        </footer>
+    </div>
+
+    <!-- Chat Page -->
+    <div id="chat-page" class="hidden flex-col h-full bg-gradient-warm">
+        <!-- Header -->
+        <header class="glass sticky top-0 z-50 px-4 py-4 shadow-sm">
+            <div class="flex items-center justify-between max-w-4xl mx-auto">
+                <button onclick="leaveRoom()" class="icon-btn">
+                    <i data-lucide="chevron-left" class="w-5 h-5"></i>
+                </button>
+                <div class="text-center cursor-pointer" onclick="copyCode()">
+                    <p class="text-xs font-semibold text-gray-500 tracking-widest uppercase">Room Code</p>
+                    <p id="room-display" class="text-2xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent font-mono select-all">
+                        LOADING
+                    </p>
+                </div>
+                <button onclick="toggleHostMenu()" id="host-btn" class="icon-btn opacity-0 pointer-events-none transition-opacity duration-300">
+                    <i data-lucide="settings-2" class="w-5 h-5"></i>
+                </button>
+            </div>
+        </header>
+
+        <!-- Messages Container -->
+        <main id="messages-container" class="flex-1 overflow-y-auto custom-scrollbar px-4 py-6 space-y-3 pb-32">
+            <!-- Messages will be rendered here -->
+        </main>
+
+        <!-- Host Menu -->
+        <div id="host-menu" class="hidden fixed bottom-28 right-4 left-4 md:left-auto md:right-8 glass rounded-2xl p-4 shadow-2xl z-40 transform transition-all duration-300 translate-y-full opacity-0 animate__animated">
+            <div class="flex justify-between items-center mb-4 pb-4 border-b border-gray-200">
+                <span class="text-sm font-bold text-blue-600 uppercase tracking-wider">Host Controls</span>
+                <button onclick="toggleHostMenu()" class="text-gray-500 hover:text-gray-700">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            <div class="space-y-3">
+                <button onclick="toggleSort()" class="w-full bg-blue-50 text-blue-700 border border-blue-200 p-3 rounded-lg text-sm font-medium hover:bg-blue-100 transition">
+                    <i data-lucide="shuffle" class="w-4 h-4 inline mr-2"></i>Sort Messages
+                </button>
+                <button onclick="clearAllMessages()" class="w-full bg-red-50 text-red-700 border border-red-200 p-3 rounded-lg text-sm font-medium hover:bg-red-100 transition">
+                    <i data-lucide="trash-2" class="w-4 h-4 inline mr-2"></i>Delete All
+                </button>
+            </div>
+        </div>
+
+        <!-- Input Footer -->
+        <footer class="glass fixed bottom-0 left-0 right-0 px-4 py-4 shadow-lg">
+            <form onsubmit="sendMessage(event)" class="max-w-4xl mx-auto flex gap-3">
+                <input type="text" id="msg-input" placeholder="Share your thoughts..." autocomplete="off"
+                    class="input-modern flex-1 rounded-full">
+                <button type="submit" class="btn-primary rounded-full px-6 flex items-center justify-center">
+                    <i data-lucide="send" class="w-5 h-5"></i>
+                </button>
+            </form>
+        </footer>
+    </div>
+
+    <!-- Modal for enlarged message -->
+    <div id="modal" onclick="closeModal()" class="hidden fixed inset-0 z-[60] bg-black/30 backdrop-blur-sm flex items-center justify-center p-4 animate__animated animate__fadeIn">
+        <div onclick="event.stopPropagation()" class="glass rounded-2xl p-8 max-w-2xl w-full shadow-2xl animate__animated animate__slideInDown">
+            <div class="flex justify-between items-start mb-4">
+                <h3 class="text-lg font-bold text-gray-900">Message</h3>
+                <button onclick="closeModal()" class="text-gray-500 hover:text-gray-700">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            <p id="modal-text" class="text-2xl text-gray-900 leading-relaxed break-words max-h-96 overflow-y-auto custom-scrollbar"></p>
+        </div>
+    </div>
+
+    <script>
+        // --- Configuration ---
+        const API_URL = window.location.origin.includes('localhost') ? 'http://localhost:8000/api' : '/api';
+        
+        // --- State ---
+        let currentRoom = null;
+        let isHost = false;
+        let poller = null;
+        let sortOrder = 'time'; // 'time' or 'status'
+        let userId = localStorage.getItem('uid') || 'u-' + Math.random().toString(36).substr(2);
+        localStorage.setItem('uid', userId);
+
+        // --- DOM Elements ---
+        const pages = { 
+            home: document.getElementById('home-page'), 
+            chat: document.getElementById('chat-page') 
+        };
+        const container = document.getElementById('messages-container');
+
+        // --- Core Functions ---
+        async function createRoom() {
+            try {
+                setLoading(true);
+                const res = await fetch(`${API_URL}/create_room`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ hostId: userId })
+                });
+                const data = await res.json();
+                enterRoom(data.room_code, true);
+            } catch (e) {
+                showError('Failed to create room. Please try again.');
+            } finally {
+                setLoading(false);
+            }
+        }
+
+        async function joinRoom() {
+            const code = document.getElementById('room-code-input').value.toUpperCase().trim();
+            if (!code || code.length !== 6) {
+                showError('Please enter a valid 6-character room code');
+                return;
+            }
+            
+            try {
+                setLoading(true);
+                const res = await fetch(`${API_URL}/join_room?room_code=${code}`);
+                if (!res.ok) throw new Error();
+                const data = await res.json();
+                enterRoom(data.room_code, data.hostId === userId);
+            } catch (e) {
+                showError('Room not found. Check the code and try again.');
+            } finally {
+                setLoading(false);
+            }
+        }
+
+        function enterRoom(code, hostStatus) {
+            currentRoom = code;
+            isHost = hostStatus;
+            sortOrder = 'time';
+
+            pages.home.classList.add('hidden');
+            pages.chat.classList.remove('hidden');
+            
+            document.getElementById('room-display').textContent = code;
+            
+            if (isHost) {
+                const btn = document.getElementById('host-btn');
+                btn.classList.remove('opacity-0', 'pointer-events-none');
+            }
+
+            pollMessages();
+            poller = setInterval(pollMessages, 2000);
+            lucide.createIcons();
+        }
+
+        function leaveRoom() {
+            if (poller) clearInterval(poller);
+            currentRoom = null;
+            isHost = false;
+            
+            pages.chat.classList.add('hidden');
+            pages.home.classList.remove('hidden');
+            
+            container.innerHTML = '';
+            document.getElementById('room-code-input').value = '';
+            document.getElementById('host-btn').classList.add('opacity-0', 'pointer-events-none');
+        }
+
+        async function sendMessage(e) {
+            e.preventDefault();
+            const input = document.getElementById('msg-input');
+            const text = input.value.trim();
+            if (!text) return;
+
+            input.value = '';
+            input.focus();
+
+            try {
+                await fetch(`${API_URL}/send_message`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ room_code: currentRoom, text })
+                });
+                await pollMessages();
+            } catch (e) {
+                showError('Failed to send message');
+            }
+        }
+
+        async function pollMessages() {
+            if (!currentRoom) return;
+            try {
+                const res = await fetch(`${API_URL}/get_messages?room_code=${currentRoom}`);
+                const msgs = await res.json();
+                renderMessages(msgs);
+            } catch (e) {
+                console.error('Error fetching messages:', e);
+            }
+        }
+
+        function renderMessages(msgs) {
+            // Sort messages if needed
+            if (sortOrder === 'status') {
+                msgs = [...msgs].sort((a, b) => {
+                    if (a.isCompleted === b.isCompleted) return 0;
+                    return a.isCompleted ? 1 : -1;
+                });
+            }
+
+            container.innerHTML = msgs.map((msg, idx) => `
+                <div class="msg-bubble w-full flex items-end justify-end gap-2 group" style="animation-delay: ${idx * 0.05}s">
+                    <div class="glass max-w-md p-4 rounded-3xl rounded-tr-none shadow-md border-l-4 ${
+                        msg.isCompleted 
+                            ? 'border-green-400 opacity-60' 
+                            : 'border-blue-400'
+                    } transition-all">
+                        <p onclick="openModal('${msg.text.replace(/'/g, "\\'")}')" 
+                            class="text-gray-900 text-lg leading-relaxed cursor-pointer hover:text-gray-800 transition ${
+                            msg.isCompleted ? 'line-through text-gray-500' : ''
+                        }">
+                            ${msg.text}
+                        </p>
+                        <p class="text-xs text-gray-500 mt-2 font-mono">
+                            ${new Date(msg.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                        </p>
+                    </div>
+
+                    ${isHost ? `
+                    <div class="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button onclick="toggleMsg('${msg._id}', ${msg.isCompleted})" 
+                            class="icon-btn bg-green-50 text-green-600 hover:bg-green-100 w-10 h-10"
+                            title="Mark as done">
+                            <i data-lucide="check" class="w-4 h-4"></i>
+                        </button>
+                        <button onclick="deleteMsg('${msg._id}')" 
+                            class="icon-btn bg-red-50 text-red-600 hover:bg-red-100 w-10 h-10"
+                            title="Delete message">
+                            <i data-lucide="trash-2" class="w-4 h-4"></i>
+                        </button>
+                    </div>
+                    ` : ''}
+                </div>
+            `).join('');
+
+            // Auto scroll
+            setTimeout(() => {
+                container.scrollTop = container.scrollHeight;
+            }, 50);
+            
+            lucide.createIcons();
+        }
+
+        // --- Host Actions ---
+        async function toggleMsg(id, status) {
+            try {
+                await fetch(`${API_URL}/toggle_message`, {
+                    method: 'PUT',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ message_id: id, is_completed: !status })
+                });
+                pollMessages();
+            } catch (e) {
+                showError('Failed to update message');
+            }
+        }
+
+        async function deleteMsg(id) {
+            if (!confirm('Delete this message?')) return;
+            try {
+                await fetch(`${API_URL}/delete_message`, {
+                    method: 'DELETE',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ message_id: id })
+                });
+                pollMessages();
+            } catch (e) {
+                showError('Failed to delete message');
+            }
+        }
+
+        async function clearAllMessages() {
+            if (!confirm('Are you sure you want to delete ALL messages? This cannot be undone.')) return;
+            try {
+                const msgs = await fetch(`${API_URL}/get_messages?room_code=${currentRoom}`);
+                const data = await msgs.json();
+                
+                for (const msg of data) {
+                    await fetch(`${API_URL}/delete_message`, {
+                        method: 'DELETE',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({ message_id: msg._id })
+                    });
+                }
+                pollMessages();
+            } catch (e) {
+                showError('Failed to clear messages');
+            }
+        }
+
+        function toggleSort() {
+            sortOrder = sortOrder === 'time' ? 'status' : 'time';
+            pollMessages();
+        }
+
+        // --- UI Utils ---
+        function openModal(text) {
+            document.getElementById('modal-text').textContent = text;
+            document.getElementById('modal').classList.remove('hidden');
+        }
+
+        function closeModal() {
+            document.getElementById('modal').classList.add('hidden');
+        }
+        
+        function toggleHostMenu() {
+            const menu = document.getElementById('host-menu');
+            const isHidden = menu.classList.contains('hidden');
+            
+            menu.classList.toggle('hidden');
+            setTimeout(() => {
+                menu.classList.toggle('opacity-0');
+                menu.classList.toggle('translate-y-full');
+            }, 10);
+        }
+
+        function copyCode() {
+            navigator.clipboard.writeText(currentRoom);
+            const el = document.getElementById('room-display');
+            const originalText = el.textContent;
+            el.textContent = '✓ Copied!';
+            setTimeout(() => {
+                el.textContent = originalText;
+            }, 1500);
+        }
+
+        function showError(msg) {
+            const el = document.getElementById('error-msg');
+            el.textContent = msg;
+            setTimeout(() => el.textContent = '', 4000);
+        }
+        
+        function setLoading(bool) {
+            // Optional: Add loading state
+        }
+
+        // --- Init ---
+        const urlParams = new URLSearchParams(window.location.search);
+        const roomParam = urlParams.get('room');
+        if (roomParam) {
+            document.getElementById('room-code-input').value = roomParam;
+            // Auto join after a brief delay to ensure DOM is ready
+            setTimeout(joinRoom, 500);
+        }
+
+        // Add event listeners
+        document.getElementById('room-code-input').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') joinRoom();
+        });
+
+        document.getElementById('msg-input').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage(e);
+            }
+        });
+
+        lucide.createIcons();
+    </script>
+</body>
+</html>
