@@ -3,6 +3,7 @@ import random
 import datetime
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import HTMLResponse
 from pymongo import MongoClient
 from pydantic import BaseModel, Field
 from typing import List
@@ -60,14 +61,25 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# --- CRITICAL FIX: Serve HTML from Root ---
+@app.get("/", response_class=HTMLResponse)
+async def read_root():
+    # Because index.html is now in the SAME folder as index.py:
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    html_path = os.path.join(current_dir, "index.html")
+    
+    with open(html_path, "r", encoding="utf-8") as f:
+        return f.read()
+
 def generate_room_code():
     chars = 'ABCDEFGHIJKLMNPQRSTUVWXYZ123456789'
     return ''.join(random.choice(chars) for _ in range(6))
 
-# Health check at root (Vercel will mount the function and forward requests here)
+# --- API Routes (Double decorated to handle Vercel path stripping) ---
+
 @app.get("/api")
-def root_health():
-    return {"status": "ok", "message": "Anon-Sphere API (root)"}
+def api_root():
+    return {"status": "ok", "message": "Anon-Sphere API Running"}
 
 @app.post("/create_room")
 @app.post("/api/create_room")
