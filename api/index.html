@@ -184,51 +184,6 @@
         .custom-scrollbar::-webkit-scrollbar-thumb:hover {
             background: rgba(59, 130, 246, 0.5);
         }
-        /* Responsive fixes for narrow and short viewports */
-        @media (max-width: 480px) {
-            /* Reduce hero title and spacing on very small screens */
-            #home-page h1, h1 {
-                font-size: 2.25rem !important;
-                line-height: 1.05;
-            }
-            /* Make glass panels more compact */
-            .glass {
-                padding: 1rem !important;
-                border-radius: 1rem !important;
-            }
-            .glass.rounded-3xl { border-radius: 1rem !important; }
-            .btn-primary {
-                padding: 10px 16px !important;
-                font-size: 15px !important;
-            }
-            .input-modern {
-                padding: 10px 12px !important;
-                font-size: 14px !important;
-            }
-            /* Reduce hero vertical space so content isn't cut off on shorter screens */
-            section.min-h-screen {
-                min-height: auto !important;
-                padding-top: calc(env(safe-area-inset-top, 12px) + 28px) !important;
-                padding-bottom: 3rem !important;
-            }
-            /* Shrink floating shapes so they don't overlap content */
-            .absolute.top-20 { top: 3.5rem !important; }
-            .absolute.bottom-32 { bottom: 2.5rem !important; }
-        }
-
-        @media (min-width: 481px) and (max-width: 768px) {
-            #home-page h1, h1 { font-size: 3rem !important; }
-            .glass { padding: 1.25rem !important; }
-            .btn-primary { padding: 11px 20px !important; }
-        }
-
-        /* Handle very short viewports (e.g. landscape phones, embedded webviews) */
-        @media (max-height: 600px) {
-            section.min-h-screen { min-height: 60vh !important; padding-top: calc(env(safe-area-inset-top, 8px) + 18px) !important; }
-            .glass { padding: 0.75rem !important; }
-            footer { padding-top: 1rem !important; padding-bottom: 1rem !important; }
-            #messages-container { padding-bottom: 20vh !important; }
-        }
     </style>
 </head>
 <body class="bg-gradient-soft text-gray-900 h-dvh flex flex-col overflow-hidden antialiased">
