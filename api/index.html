@@ -559,7 +559,7 @@
                             ${msg.text}
                         </p>
                         <p class="text-xs text-gray-500 mt-2 font-mono">
-                            ${new Date(msg.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                            ${formatTimeIST(msg.timestamp)}
                         </p>
                     </div>
 
@@ -716,6 +716,14 @@
         
         function setLoading(bool) {
             // Optional: Add loading state
+        }
+
+        // Format time in Indian Standard Time (IST)
+        function formatTimeIST(timestamp) {
+            const date = new Date(timestamp);
+            // Convert to IST (UTC+5:30)
+            const istTime = new Date(date.toLocaleString('en-US', { timeZone: 'Asia/Kolkata' }));
+            return istTime.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
         }
 
         // --- Init ---
