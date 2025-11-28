@@ -3,6 +3,7 @@ import random
 import datetime
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import HTMLResponse
 from pymongo import MongoClient
 from pydantic import BaseModel, Field
 from typing import List
@@ -59,6 +60,17 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# --- Helper to Serve HTML ---
+@app.get("/", response_class=HTMLResponse)
+async def read_root():
+    # Calculate path to public/index.html relative to this file
+    base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    html_path = os.path.join(base_dir, "public", "index.html")
+    
+    # Read and return the HTML file
+    with open(html_path, "r", encoding="utf-8") as f:
+        return f.read()
 
 def generate_room_code():
     chars = 'ABCDEFGHIJKLMNPQRSTUVWXYZ123456789'
