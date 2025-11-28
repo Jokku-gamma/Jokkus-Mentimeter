@@ -6,11 +6,15 @@
     <title>Voicebox - Anonymous Feedback Platform</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- QR code generator -->
+    <script src="https://cdn.rawgit.com/davidshimjs/qrcodejs/gh-pages/qrcode.min.js"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" rel="stylesheet"/>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Poppins:wght@600;700;800&display=swap" rel="stylesheet">
     <style>
         * { -webkit-tap-highlight-color: transparent; }
         html, body { font-family: 'Inter', sans-serif; scroll-behavior: smooth; }
+        /* Respect safe area (notches) and prevent header from being hidden */
+        body { padding-top: env(safe-area-inset-top); padding-bottom: env(safe-area-inset-bottom); }
         input, textarea { font-size: 16px !important; font-family: 'Inter', sans-serif; }
         
         /* Gradient Backgrounds */
@@ -319,9 +323,14 @@
                         LOADING
                     </p>
                 </div>
-                <button onclick="toggleHostMenu()" id="host-btn" class="icon-btn opacity-0 pointer-events-none transition-opacity duration-300">
-                    <i data-lucide="settings-2" class="w-5 h-5"></i>
-                </button>
+                <div class="flex items-center gap-2">
+                    <button id="invite-btn" onclick="showInviteModal()" class="icon-btn opacity-0 pointer-events-none transition-opacity duration-300" title="Invite / Share room">
+                        <i data-lucide="share-2" class="w-5 h-5"></i>
+                    </button>
+                    <button onclick="toggleHostMenu()" id="host-btn" class="icon-btn opacity-0 pointer-events-none transition-opacity duration-300">
+                        <i data-lucide="settings-2" class="w-5 h-5"></i>
+                    </button>
+                </div>
             </div>
         </header>
 
@@ -370,6 +379,30 @@
                 </button>
             </div>
             <p id="modal-text" class="text-2xl text-gray-900 leading-relaxed break-words max-h-96 overflow-y-auto custom-scrollbar"></p>
+        </div>
+    </div>
+
+    <!-- Invite / Share Modal -->
+    <div id="invite-modal" onclick="closeInviteModal()" class="hidden fixed inset-0 z-[60] bg-black/30 backdrop-blur-sm flex items-center justify-center p-4 animate__animated animate__fadeIn">
+        <div onclick="event.stopPropagation()" class="glass rounded-2xl p-6 max-w-md w-full shadow-2xl animate__animated animate__slideInDown text-center">
+            <button onclick="closeInviteModal()" class="absolute top-4 right-4 text-gray-500 hover:text-gray-700">
+                <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+            <h3 class="text-xl font-bold text-gray-900 mb-3">Invite Others</h3>
+            <p class="text-sm text-gray-600 mb-4">Share this link or show the QR code to join the room.</p>
+
+            <div id="qrcode-container" class="flex justify-center mb-4">
+                <div id="invite-qrcode"></div>
+            </div>
+
+            <div class="flex gap-2 items-center">
+                <input id="invite-link-input" readonly class="input-modern flex-1 text-sm text-center" />
+                <button id="copy-invite-btn" onclick="copyInviteLink()" class="btn-secondary px-4 rounded-md">Copy</button>
+            </div>
+
+            <div class="mt-4 flex gap-3 justify-center">
+                <button onclick="shareInviteLink()" id="native-share-btn" class="btn-primary px-6 py-2 rounded-md hidden">Share</button>
+            </div>
         </div>
     </div>
 
@@ -662,6 +695,83 @@
         });
 
         lucide.createIcons();
+    </script>
+    <script>
+        // --- Invite / QR utilities ---
+        function showInviteModal() {
+            if (!currentRoom) return;
+            const modal = document.getElementById('invite-modal');
+            const linkInput = document.getElementById('invite-link-input');
+            const qrcodeEl = document.getElementById('invite-qrcode');
+
+            const base = window.location.origin + window.location.pathname;
+            const joinLink = `${base}?room=${currentRoom}`;
+            linkInput.value = joinLink;
+
+            // Clear old QR
+            qrcodeEl.innerHTML = '';
+            try {
+                new QRCode(qrcodeEl, {
+                    text: joinLink,
+                    width: 180,
+                    height: 180,
+                    colorDark: '#2563eb',
+                    colorLight: '#ffffff',
+                    correctLevel: QRCode.CorrectLevel.H
+                });
+            } catch (e) {
+                qrcodeEl.textContent = 'QR unavailable';
+            }
+
+            // Show native share button on supporting devices
+            const nativeShareBtn = document.getElementById('native-share-btn');
+            if (navigator.share) {
+                nativeShareBtn.classList.remove('hidden');
+            } else {
+                nativeShareBtn.classList.add('hidden');
+            }
+
+            modal.classList.remove('hidden');
+        }
+
+        function closeInviteModal() {
+            document.getElementById('invite-modal').classList.add('hidden');
+        }
+
+        function copyInviteLink() {
+            const link = document.getElementById('invite-link-input').value;
+            if (!link) return;
+            navigator.clipboard.writeText(link).then(() => {
+                const btn = document.getElementById('copy-invite-btn');
+                const old = btn.textContent;
+                btn.textContent = 'Copied!';
+                setTimeout(() => btn.textContent = old, 1500);
+            }).catch(() => {
+                alert('Copy failed — please copy manually.');
+            });
+        }
+
+        function shareInviteLink() {
+            const link = document.getElementById('invite-link-input').value;
+            if (!link) return;
+            if (navigator.share) {
+                navigator.share({ title: 'Join my Voicebox room', url: link }).catch(() => {});
+            } else {
+                copyInviteLink();
+            }
+        }
+
+        // Ensure invite button shows only for host (call when entering room)
+        const _oldEnterRoom = enterRoom;
+        enterRoom = function(code, hostStatus) {
+            _oldEnterRoom(code, hostStatus);
+            const inviteBtn = document.getElementById('invite-btn');
+            if (hostStatus) {
+                inviteBtn.classList.remove('opacity-0', 'pointer-events-none');
+            } else {
+                inviteBtn.classList.add('opacity-0', 'pointer-events-none');
+            }
+        }
     </script>
 </body>
 </html>
