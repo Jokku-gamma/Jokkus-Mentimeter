@@ -64,11 +64,13 @@ def generate_room_code():
     chars = 'ABCDEFGHIJKLMNPQRSTUVWXYZ123456789'
     return ''.join(random.choice(chars) for _ in range(6))
 
-# Keep this for health checks
+# Health check at root (Vercel will mount the function and forward requests here)
+@app.get("/")
 @app.get("/api")
-def api_root():
-    return {"status": "ok"}
+def root_health():
+    return {"status": "ok", "message": "Anon-Sphere API (root)"}
 
+@app.post("/create_room")
 @app.post("/api/create_room")
 def create_room(request: CreateRoomRequest):
     new_code = generate_room_code()
@@ -79,6 +81,7 @@ def create_room(request: CreateRoomRequest):
     rooms_collection.insert_one(new_room.dict())
     return new_room
 
+@app.get("/join_room")
 @app.get("/api/join_room")
 def join_room(room_code: str):
     room = rooms_collection.find_one({"room_code": room_code.upper()})
@@ -87,6 +90,7 @@ def join_room(room_code: str):
     room["_id"] = str(room["_id"])
     return room
 
+@app.post("/send_message")
 @app.post("/api/send_message")
 def send_message(request: SendMessageRequest):
     message_data = {
@@ -98,6 +102,7 @@ def send_message(request: SendMessageRequest):
     result = messages_collection.insert_one(message_data)
     return {"status": "ok", "message_id": str(result.inserted_id)}
 
+@app.get("/get_messages")
 @app.get("/api/get_messages")
 def get_messages(room_code: str):
     messages = list(messages_collection.find({"room_code": room_code.upper()}).sort("timestamp", 1))
@@ -105,6 +110,7 @@ def get_messages(room_code: str):
         msg['_id'] = str(msg['_id'])
     return messages
 
+@app.put("/toggle_message")
 @app.put("/api/toggle_message")
 def toggle_message(request: ToggleMessageRequest):
     try:
@@ -116,6 +122,7 @@ def toggle_message(request: ToggleMessageRequest):
         raise HTTPException(status_code=404, detail="Not found")
     return {"status": "ok"}
 
+@app.delete("/delete_message")
 @app.delete("/api/delete_message")
 def delete_message(request: DeleteMessageRequest):
     try:
